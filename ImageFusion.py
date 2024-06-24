@@ -238,7 +238,7 @@ class ImageFusion(Utility.Method):
             # self.printAndWrite("拐角融合")
             weightMatA, weightMatB = self.getWeightsMatrix(images)
         imageA[imageA < 0] = imageB[imageA < 0]
-        result = weightMatA * imageA.astype(np.int) + weightMatB * imageB.astype(np.int)
+        result = weightMatA * imageA.astype(np.int32) + weightMatB * imageB.astype(np.int32)
         result[result < 0] = 0;     result[result > 255] = 255
         fuseRegion = np.uint8(result)
         return fuseRegion

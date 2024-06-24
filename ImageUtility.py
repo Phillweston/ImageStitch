@@ -1,8 +1,8 @@
 import numpy as np
 import cv2
 import math
-from myGpuFeatures import myGpuFeatures
-# from scipy.stats import mode
+from cv2 import cuda
+
 
 class Method():
     # 关于打印信息的设置
@@ -40,7 +40,7 @@ class Method():
     orbMaxDistance = 30
 
     # 关于特征配准的设置
-    offsetCaculate = "mode"     # "mode" or "ransac"
+    offsetCalculate = "mode"     # "mode" or "ransac"
     offsetEvaluate = 3           # 40 menas nums of matches for mode, 3.0 menas  of matches for ransac
 
     # 关于图像增强的操作
@@ -253,7 +253,7 @@ class Method():
     	'''
         if self.isGPUAvailable == False: # CPU mode
             if featureMethod == "sift":
-                descriptor = cv2.xfeatures2d.SIFT_create()
+                descriptor = cv2.SIFT_create()
             elif featureMethod == "surf":
                 descriptor = cv2.xfeatures2d.SURF_create()
             elif featureMethod == "orb":
@@ -262,16 +262,57 @@ class Method():
             kps, features = descriptor.detectAndCompute(image, None)
             # 将结果转换成NumPy数组
             kps = np.float32([kp.pt for kp in kps])
-        else:                           # GPU mode
+        else:  # GPU mode
             if featureMethod == "sift":
                 # 目前GPU-SIFT尚未开发，先采用CPU版本的替代
-                descriptor = cv2.xfeatures2d.SIFT_create()
+                descriptor = cv2.SIFT_create()
                 kps, features = descriptor.detectAndCompute(image, None)
                 kps = np.float32([kp.pt for kp in kps])
             elif featureMethod == "surf":
-                kps, features = self.npToKpsAndDescriptors(myGpuFeatures.detectAndDescribeBySurf(image, self.surfHessianThreshold, self.surfNOctaves,self.surfNOctaveLayers, self.surfIsExtended, self.surfKeypointsRatio, self.surfIsUpright))
+                # Check if CUDA is available
+                if cuda.getCudaEnabledDeviceCount() > 0:
+                    # Initialize CUDA SURF detector
+                    descriptor = cuda.SURF_CUDA_create(_hessianThreshold=self.surfHessianThreshold, _nOctaves=self.surfNOctaves, _nOctaveLayers=self.surfNOctaveLayers, _extended=self.surfIsExtended, _upright=self.surfIsUpright)
+                    
+                    # Upload image to GPU
+                    gpuImage = cuda.GpuMat()
+                    gpuImage.upload(image)
+                    
+                    # Detect keypoints and compute descriptors with CUDA SURF
+                    gpu_kps, gpu_des = descriptor.detectWithDescriptors(gpuImage, None, useProvidedKeypoints=False)
+                    
+                    # Convert keypoints to format compatible with non-CUDA processing
+                    kps = descriptor.downloadKeypoints(gpu_kps)
+                    features = gpu_des.download()
+                else:
+                    print("CUDA not available. Using CPU version of SURF.")
+                    # Using OpenCV's built-in SURF if available
+                    descriptor = cv2.xfeatures2d.SURF_create(hessianThreshold=self.surfHessianThreshold, nOctaves=self.surfNOctaves, nOctaveLayers=self.surfNOctaveLayers, extended=self.surfIsExtended, upright=self.surfIsUpright)
+                    kps, features = descriptor.detectAndCompute(image, None)
+                    kps = np.float32([kp.pt for kp in kps])
             elif featureMethod == "orb":
-                kps, features = self.npToKpsAndDescriptors(myGpuFeatures.detectAndDescribeByOrb(image, self.orbNfeatures, self.orbScaleFactor, self.orbNlevels, self.orbEdgeThreshold, self.orbFirstLevel, self.orbWTA_K, 0, self.orbPatchSize, self.orbFastThreshold, self.orbBlurForDescriptor))
+                # Ensure CUDA device is available
+                if cuda.getCudaEnabledDeviceCount() > 0:
+                    # Initialize CUDA ORB detector
+                    descriptor = cuda.ORB_create(nfeatures=self.orbNfeatures, scaleFactor=self.orbScaleFactor, nlevels=self.orbNlevels, edgeThreshold=self.orbEdgeThreshold, firstLevel=self.orbFirstLevel, WTA_K=self.orbWTA_K, scoreType=cv2.ORB_HARRIS_SCORE, patchSize=self.orbPatchSize, fastThreshold=self.orbFastThreshold)
+                    
+                    # Upload image to GPU
+                    gpuImage = cuda.GpuMat()
+                    gpuImage.upload(image)
+                    
+                    # Detect keypoints and compute descriptors with CUDA ORB
+                    gpu_kps, gpu_features = descriptor.detectAndCompute(gpuImage, None)
+                    
+                    # Download keypoints and descriptors to host memory
+                    kps = [cv2.KeyPoint(x=kp.pt[0], y=kp.pt[1], _size=kp.size, _angle=kp.angle, _response=kp.response, _octave=kp.octave, _class_id=kp.class_id) for kp in gpu_kps]
+                    features = gpu_features.download()
+                    kps = np.float32([kp.pt for kp in kps])
+                else:
+                    print("CUDA device not available. Using CPU-based feature detection.")
+                    # Fallback to CPU-based detection (e.g., ORB, SIFT, or original SURF as per your requirement)
+                    descriptor = cv2.ORB_create()  # Example fallback to ORB on CPU
+                    kps, features = descriptor.detectAndCompute(image, None)
+                    kps = np.float32([kp.pt for kp in kps])
         # 返回特征点集，及对应的描述特征
         return (kps, features)
 
@@ -301,11 +342,30 @@ class Method():
                 for m in rawMatches:
                     matches.append((m.trainIdx, m.queryIdx))
             # self.printAndWrite("  The number of matches is " + str(len(matches)))
-        else:                                   # GPU Mode
+        else:  # GPU Mode
             if self.featureMethod == "surf":
-                matches = self.npToListForMatches(myGpuFeatures.matchDescriptors(np.array(featuresA), np.array(featuresB), 2, self.searchRatio))
+                # Initialize FLANN based matcher for SURF
+                FLANN_INDEX_KDTREE = 1
+                index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+                search_params = dict(checks=50)  # or pass empty dictionary
+                flann = cv2.FlannBasedMatcher(index_params, search_params)
+                
+                matches = flann.knnMatch(np.asarray(featuresA, np.float32), np.asarray(featuresB, np.float32), k=2)
+                # Filter matches using the Lowe's ratio test
+                good_matches = []
+                for m, n in matches:
+                    if m.distance < self.searchRatio * n.distance:
+                        good_matches.append(m)
+                matches = good_matches
+
             elif self.featureMethod == "orb":
-                matches = self.npToListForMatches(myGpuFeatures.matchDescriptors(np.array(featuresA), np.array(featuresB), 3, self.orbMaxDistance))
+                # Initialize BFMatcher for ORB with default params
+                bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                
+                matches = bf.knnMatch(np.asarray(featuresA, np.uint8), np.asarray(featuresB, np.uint8), k=2)
+                # Filter matches to satisfy the max distance condition
+                good_matches = [m[0] for m in matches if len(m) == 2 and m[0].distance < self.orbMaxDistance]
+                matches = good_matches
         return matches
 
     def resizeImg(self, image, resizeTimes, interMethod = cv2.INTER_AREA):

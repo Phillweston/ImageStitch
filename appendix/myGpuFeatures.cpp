@@ -66,10 +66,10 @@ Mat tranVectorDMatchToMat(vector<DMatch> VDMatch)
 
 PyObject* detectAndDescribeBySurf(PyObject *h_imageAPtr,  float hessianThreshold, int nOctaves, int nOctaveLayers, bool isExtended, float keypointsRatio, bool isUpright)
 {
-	// ½¨Á¢GPUÉÏ´æ´¢¿Õ¼ä
+	// å»ºç«‹GPUä¸Šå­˜å‚¨ç©ºé—´
 	GpuMat d_image, d_keypoints, d_descriptors;
 
-	// ½ÓÊÕDLL´«µİµÄÍ¼Ïñ²¢×ª³ÉMAT,²¢¼ÓÔØµ½GPUÉÏ
+	// æ¥æ”¶DLLä¼ é€’çš„å›¾åƒå¹¶è½¬æˆMAT,å¹¶åŠ è½½åˆ°GPUä¸Š
 	NDArrayConverter cvt;
 	d_image.upload(cvt.toMat(h_imageAPtr));
 	CV_Assert(!d_image.empty());
@@ -99,16 +99,16 @@ PyObject* detectAndDescribeBySurf(PyObject *h_imageAPtr,  float hessianThreshold
 	d_descriptors.release();
 	surf.releaseMemory();
 
-	// Í¨¹ıDLL·¢ËÍndarry»ØÈ¥
+	// é€šè¿‡DLLå‘é€ndarryå›å»
 	return cvt.toNDArray(tranVectorKeyPointsDescriptorsToMat(h_keypoints, h_descriptors));
 }
 
 PyObject* detectAndDescribeByOrb(PyObject *h_imageAPtr, int nFeatures, float scaleFactor, int nlevels, int edgeThreshold, int firstLevel, int WTA_K, int scoreType, int patchSize, int fastThreshold, bool blurForDescriptor)
 {
-	// ½¨Á¢GPUÉÏ´æ´¢¿Õ¼ä
+	// å»ºç«‹GPUä¸Šå­˜å‚¨ç©ºé—´
 	GpuMat d_image, d_keypoints, d_descriptors, d_descriptors_32F;
 
-	// ½ÓÊÕDLL´«µİµÄÍ¼Ïñ²¢×ª³ÉMAT,²¢¼ÓÔØµ½GPUÉÏ
+	// æ¥æ”¶DLLä¼ é€’çš„å›¾åƒå¹¶è½¬æˆMAT,å¹¶åŠ è½½åˆ°GPUä¸Š
 	NDArrayConverter cvt;
 	d_image.upload(cvt.toMat(h_imageAPtr));
 	CV_Assert(!d_image.empty());
@@ -141,7 +141,7 @@ PyObject* detectAndDescribeByOrb(PyObject *h_imageAPtr, int nFeatures, float sca
 	d_descriptors.release();
 	d_descriptors_32F.release();
 
-	// Í¨¹ıDLL·¢ËÍndarry»ØÈ¥
+	// é€šè¿‡DLLå‘é€ndarryå›å»
 	return cvt.toNDArray(tranVectorKeyPointsDescriptorsToMat(h_keypoints, h_descriptors));
 }
 
@@ -159,7 +159,7 @@ PyObject* matchDescriptors(PyObject *h_descriptorsAPtr, PyObject *h_descriptorsB
 
 	if(featureType == 1 || featureType == 2)
 	{
-		// sift ºÍ surf Ä£Ê½ÏÂÓÃÅ·ÊÏ¾àÀë£¬²¢ÅĞ¶Ï×î½üÁÚºÍ´Î½üÁÚ¾àÀë
+		// sift å’Œ surf æ¨¡å¼ä¸‹ç”¨æ¬§æ°è·ç¦»ï¼Œå¹¶åˆ¤æ–­æœ€è¿‘é‚»å’Œæ¬¡è¿‘é‚»è·ç¦»
 		matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
 		vector<vector<DMatch>> d_matches;
 		matcher->knnMatch(d_descriptorsA, d_descriptorsB, d_matches, 2);
@@ -173,7 +173,7 @@ PyObject* matchDescriptors(PyObject *h_descriptorsAPtr, PyObject *h_descriptorsB
 	}
 	else if (featureType == 3)
 	{
-		// orb ÔËÓÃ ººÃ÷¾àÀë£¬²¢ÅĞ¶Ï¾àÀëÊÇ·ñĞ¡ÓÚÄ³¸ö²ÎÊı
+		// orb è¿ç”¨ æ±‰æ˜è·ç¦»ï¼Œå¹¶åˆ¤æ–­è·ç¦»æ˜¯å¦å°äºæŸä¸ªå‚æ•°
 		vector<DMatch> d_matches;
 		matcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
 		matcher->match(d_descriptorsA, d_descriptorsB, d_matches, GpuMat());
@@ -190,7 +190,7 @@ PyObject* matchDescriptors(PyObject *h_descriptorsAPtr, PyObject *h_descriptorsB
 	d_descriptorsA.release(); d_descriptorsB.release();
 	matcher.release();
 
-	// Í¨¹ıDLL·¢ËÍndarry»ØÈ¥
+	// é€šè¿‡DLLå‘é€ndarryå›å»
 	return cvt.toNDArray(tranVectorDMatchToMat(h_good_matches));
 }
 

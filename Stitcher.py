@@ -1,15 +1,13 @@
-﻿import numpy as np
+import numpy as np
 import cv2
-# from scipy.stats import mode
 import time
 import os
 import glob
 import copy
-# import skimage.measure
-# from numba import jit
 import ImageUtility as Utility
 import ImageFusion
 import time
+
 
 class ImageFeature():
     # 用来保存串行全局拼接中的第二张图像的特征点和描述子，为后续加速拼接使用，避免重复计算
@@ -23,6 +21,7 @@ class Stitcher(Utility.Method):
 	    图像拼接类，包括所有跟材料显微组织图像配准相关函数
 	'''
     isColorMode = True
+    windowing = False
     direction = 1               # 1： 第一张图像在上，第二张图像在下；   2： 第一张图像在左，第二张图像在右；
                                 # 3： 第一张图像在下，第二张图像在上；   4： 第一张图像在右，第二张图像在左；
     directIncre = 1             # 拼接增长方向，可以为1. 0， -1
@@ -219,15 +218,17 @@ class Stitcher(Utility.Method):
         localDirection = iniDirection
         for i in range(1, maxI):
             # self.printAndWrite("  i=" + str(i) + " and maxI="+str(maxI))
-            while(True):
+            while True:
                 # get the roi region of images
                 # self.printAndWrite("  localDirection=" + str(localDirection))
                 roiImageA = self.getROIRegionForIncreMethod(imageA, direction=localDirection, order="first", searchRatio = i * self.roiRatio)
                 roiImageB = self.getROIRegionForIncreMethod(imageB, direction=localDirection, order="second", searchRatio = i * self.roiRatio)
 
-                # hann = cv2.createHanningWindow(winSize=(roiImageA.shape[1], roiImageA.shape[0]), type=5)
-                # (offsetTemp, response) = cv2.phaseCorrelate(np.float32(roiImageA), np.float32(roiImageB), window=hann)
-                (offsetTemp, response) = cv2.phaseCorrelate(np.float64(roiImageA), np.float64(roiImageB))
+                if self.windowing:
+                    hann = cv2.createHanningWindow(winSize=(roiImageA.shape[1], roiImageA.shape[0]), type=5)
+                    (offsetTemp, response) = cv2.phaseCorrelate(np.float32(roiImageA), np.float32(roiImageB), window=hann)
+                else:
+                    (offsetTemp, response) = cv2.phaseCorrelate(np.float64(roiImageA), np.float64(roiImageB))
                 offset[0] = np.int(offsetTemp[1])
                 offset[1] = np.int(offsetTemp[0])
                 # self.printAndWrite("offset: " + str(offset))
@@ -291,9 +292,9 @@ class Stitcher(Utility.Method):
         if featuresA is not None and featuresB is not None:
             matches = self.matchDescriptors(featuresA, featuresB)
             # match all the feature points
-            if self.offsetCaculate == "mode":
+            if self.offsetCalculate == "mode":
                 (status, offset) = self.getOffsetByMode(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
-            elif self.offsetCaculate == "ransac":
+            elif self.offsetCalculate == "ransac":
                 (status, offset, adjustH) = self.getOffsetByRansac(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
         if status == False:
             self.tempImageFeature.isBreak = True
@@ -339,9 +340,9 @@ class Stitcher(Utility.Method):
                     matches = self.matchDescriptors(featuresA, featuresB)
                     # self.printAndWrite("  The number of raw matches is " + str(len(matches)))
                     # match all the feature points
-                    if self.offsetCaculate == "mode":
+                    if self.offsetCalculate == "mode":
                         (status, offset) = self.getOffsetByMode(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
-                    elif self.offsetCaculate == "ransac":
+                    elif self.offsetCalculate == "ransac":
                         (status, offset, adjustH) = self.getOffsetByRansac(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
                 if status:
                     break
@@ -431,10 +432,10 @@ class Stitcher(Utility.Method):
             imageList.append(tempImage)
         stitchResult = None
         if self.isColorMode:
-            stitchResult = np.zeros((resultRow, resultCol, 3), np.int) - 1
+            stitchResult = np.zeros((resultRow, resultCol, 3), np.int32) - 1
         else:
-            stitchResult = np.zeros((resultRow, resultCol), np.int) - 1
-        # stitchResult = np.zeros((resultRow, resultCol), np.int)
+            stitchResult = np.zeros((resultRow, resultCol), np.int32) - 1
+        # stitchResult = np.zeros((resultRow, resultCol), np.int32)
         self.printAndWrite("  The rectified offsetList is " + str(offsetList))
         # 如上算出各个图像相对于原点偏移量，并最终计算出输出图像大小，并构造矩阵，如下开始赋值
         for i in range(0, len(offsetList)):

@@ -20,7 +20,7 @@ vector<DMatch> h_good_matches;
 
 Mat tranVectorFloatToMat(vector<float> descriptor)
 {
-	// ½«´ÓGPUÉÏÏÂÔØµÃµ½µÄÃèÊö×Ó»»³ÉCPUµÄmat¾ØÕó
+	// å°†ä»GPUä¸Šä¸‹è½½å¾—åˆ°çš„æè¿°å­æ¢æˆCPUçš„matçŸ©é˜µ
 	int keypointNum = descriptor.size() / 128;
 	Mat descriptorCPU(keypointNum, 128, CV_32F);
 	for (int i = 0; i < keypointNum; i++)
@@ -107,7 +107,7 @@ void matchFeaturesBySurf(PyObject *h_imageAPtr, PyObject *h_imageBPtr, float h_k
 	GpuMat d_keypointsA, d_keypointsB;
 	GpuMat d_descriptorsA, d_descriptorsB;
 
-	// ½ÓÊÕDLL´«µİµÄÍ¼Ïñ²¢×ª³ÉMAT,²¢¼ÓÔØµ½GPUÉÏ
+	// æ¥æ”¶DLLä¼ é€’çš„å›¾åƒå¹¶è½¬æˆMAT,å¹¶åŠ è½½åˆ°GPUä¸Š
 	d_imageA.upload(cvt.toMat(h_imageAPtr));
 	CV_Assert(!d_imageA.empty());
 	d_imageB.upload(cvt.toMat(h_imageBPtr));
@@ -116,7 +116,7 @@ void matchFeaturesBySurf(PyObject *h_imageAPtr, PyObject *h_imageBPtr, float h_k
 
 	SURF_CUDA surf;
 	surf.keypointsRatio = h_keypointsRatio;
-	// Ñ¹ÈëÏòÁ¿
+	// å‹å…¥å‘é‡
 	surf(d_imageA, GpuMat(), d_keypointsA, d_descriptorsA);
 	surf(d_imageB, GpuMat(), d_keypointsB, d_descriptorsB);
 
