@@ -214,7 +214,7 @@ class Method():
 
     def npToKpsAndDescriptors(self, array):
         """
-        功能:？
+        功能：Convert array to kps and descriptors
         :param array:
         :return: kps, descriptors
         """

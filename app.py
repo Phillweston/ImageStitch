@@ -104,7 +104,7 @@ iface = gr.Interface(
         gr.Slider(minimum=-1, maximum=1, step=1, value=0, label="Direction Increment", info="Direction increment for stitching."),
         gr.Checkbox(value=True, label="Enable Incremental Method to Calculate Offset for Feature Searching", info="Enable Incremental Method to Calculate Offset for Feature Searching."),
         gr.Textbox(label="Project Address", value="demoImages\\iron", placeholder="Input project address here", info="Input project address for stitching."),
-        gr.Textbox(label="Output Folder", value="result\\iron", placeholder="Input output folder here", info="Input output folder for stitching."),
+        gr.Textbox(label="Output Folder Prefix", value="result\\iron", placeholder="Input output folder prefix here", info="Input output folder prefix for stitching."),
         gr.Number(label="File Number", value=1, info="Input file number for stitching."),
         gr.Number(label="Start Number", value=1, info="Input start number for stitching."),
         gr.Radio(choices=["jpg", "png"], value="jpg", label="Input File Extension", info="Input file extension for stitching."),

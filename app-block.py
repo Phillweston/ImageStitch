@@ -117,8 +117,8 @@ with gr.Blocks() as iface:
 
             gr.Markdown("### Project and Output Settings")
             with gr.Row():
-                projectAddress = gr.Textbox(value="demoImages\\iron", label="Project Address", info="Directory containing images to stitch.")
-                outputFolder = gr.Textbox(value="result\\iron", label="Output Folder", info="Directory to save stitched results.")
+                projectAddress = gr.Textbox(value="demoImages\\iron", label="Project Address", placeholder="Input project address here", info="Directory containing images to stitch.")
+                outputFolder = gr.Textbox(value="result\\iron", label="Output Folder Prefix", placeholder="Input output folder prefix here", info="Directory prefix to save stitched results.")
                 fileNum = gr.Number(value=1, label="File Number", info="Number of files to process.")
                 startNum = gr.Number(value=1, label="Start Number", info="Starting file index.")
                 inputFileExtension = gr.Radio(choices=["jpg", "png"], value="jpg", label="Input File Extension", info="File extension for input images.")
