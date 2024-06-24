@@ -45,11 +45,11 @@ class Stitcher(Utility.Method):
             direction = 4
         return direction
 
-    def flowStitch(self, fileList, caculateOffsetMethod):
+    def flowStitch(self, fileList, calculateOffsetMethod):
         """
         功能：序列拼接，从list的第一张拼接到最后一张，由于中间可能出现拼接失败，故记录截止文件索引
         :param fileList: 图像地址序列
-        :param caculateOffsetMethod:计算偏移量方法
+        :param calculateOffsetMethod:计算偏移量方法
         :return: ((status, endfileIndex), stitchImage),（（拼接状态， 截止文件索引）， 拼接结果）
         """
         self.printAndWrite("Stitching the directory which have " + str(fileList[0]))
@@ -66,10 +66,10 @@ class Stitcher(Utility.Method):
             # imageB = cv2.imread(fileList[fileIndex + 1], 0)
             imageA = cv2.imdecode(np.fromfile(fileList[fileIndex], dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
             imageB = cv2.imdecode(np.fromfile(fileList[fileIndex + 1], dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
-            if caculateOffsetMethod == self.calculateOffsetForPhaseCorrleate:
-                (status, offset) = self.calculateOffsetForPhaseCorrleate([fileList[fileIndex], fileList[fileIndex + 1]])
+            if calculateOffsetMethod == self.calculateOffsetForPhaseCorrelate:
+                (status, offset) = self.calculateOffsetForPhaseCorrelate([fileList[fileIndex], fileList[fileIndex + 1]])
             else:
-                (status, offset) = caculateOffsetMethod([imageA, imageB])
+                (status, offset) = calculateOffsetMethod([imageA, imageB])
             if status == False:
                 describtion = "  " + str(fileList[fileIndex]) + " and " + str(fileList[fileIndex+1]) + " can not be stitched"
                 break
@@ -92,18 +92,18 @@ class Stitcher(Utility.Method):
             self.printAndWrite(describtion)
         return ((status, endfileIndex), stitchImage)
 
-    def flowStitchWithMutiple(self, fileList, caculateOffsetMethod):
+    def flowStitchWithMultiple(self, fileList, calculateOffsetMethod):
         """
         功能：多段序列拼接，从list的第一张拼接到最后一张，由于中间可能出现拼接失败，将分段拼接结果共同返回
         :param fileList: 图像地址序列
-        :param caculateOffsetMethod:计算偏移量方法
+        :param calculateOffsetMethod:计算偏移量方法
         :return: 拼接的图像list
         """
         result = []
         totalNum = len(fileList)
         startNum = 0
         while 1:
-            (status, stitchResult) = self.flowStitch(fileList[startNum: totalNum], caculateOffsetMethod)
+            (status, stitchResult) = self.flowStitch(fileList[startNum: totalNum], calculateOffsetMethod)
             result.append(stitchResult)
             self.tempImageFeature.isBreak = True
             if status[1] == 1:
@@ -125,13 +125,13 @@ class Stitcher(Utility.Method):
             self.printAndWrite("stitching Break, start from " + str(fileList[startNum]) + " again")
         return result
 
-    def imageSetStitch(self, projectAddress, outputAddress, fileNum, caculateOffsetMethod, startNum = 1, fileExtension = "jpg", outputfileExtension = "jpg"):
+    def imageSetStitch(self, projectAddress, outputAddress, fileNum, calculateOffsetMethod, startNum = 1, fileExtension = "jpg", outputfileExtension = "jpg"):
         """
         功能：图像集拼接方法
         :param projectAddress: 项目地址
         :param outputAddress: 输出地址
         :param fileNum: 共多少个文件
-        :param caculateOffsetMethod: 计算偏移量方法
+        :param calculateOffsetMethod: 计算偏移量方法
         :param startNum: 从第几个文件开始拼
         :param fileExtension: 输入文件扩展名
         :param outputfileExtension:输出文件扩展名
@@ -140,22 +140,25 @@ class Stitcher(Utility.Method):
         for i in range(startNum, fileNum+1):
             fileAddress = projectAddress + "\\" + str(i) + "\\"
             fileList = glob.glob(fileAddress + "*." + fileExtension)
+            if not fileList:  # Check if fileList is empty
+                self.printAndWrite(f"No files found in {fileAddress} with extension {fileExtension}. Skipping...")
+                continue
             if not os.path.exists(outputAddress):
                 os.makedirs(outputAddress)
             Stitcher.outputAddress = outputAddress
-            (status, result) = self.flowStitch(fileList, caculateOffsetMethod)
+            (status, result) = self.flowStitch(fileList, calculateOffsetMethod)
             self.tempImageFeature.isBreak = True
             cv2.imwrite(outputAddress + "\\stitching_result_" + str(i) + "." + outputfileExtension, result)
             if status == False:
                 self.printAndWrite("stitching Failed")
 
-    def imageSetStitchWithMutiple(self, projectAddress, outputAddress, fileNum, caculateOffsetMethod, startNum = 1, fileExtension = "jpg", outputfileExtension = "jpg"):
+    def imageSetStitchWithMultiple(self, projectAddress, outputAddress, fileNum, calculateOffsetMethod, startNum = 1, fileExtension = "jpg", outputfileExtension = "jpg"):
         """
         功能：图像集多段拼接方法
         :param projectAddress: 项目地址
         :param outputAddress: 输出地址
         :param fileNum: 共多少个文件
-        :param caculateOffsetMethod: 计算偏移量方法
+        :param calculateOffsetMethod: 计算偏移量方法
         :param startNum: 从第几个文件开始拼
         :param fileExtension: 输入文件扩展名
         :param outputfileExtension:输出文件扩展名
@@ -165,10 +168,13 @@ class Stitcher(Utility.Method):
             startTime = time.time()
             fileAddress = projectAddress + "\\" + str(i) + "\\"
             fileList = glob.glob(fileAddress + "*." + fileExtension)
+            if not fileList:  # Check if fileList is empty
+                self.printAndWrite(f"No files found in {fileAddress} with extension {fileExtension}. Skipping...")
+                continue
             if not os.path.exists(outputAddress):
                 os.makedirs(outputAddress)
             Stitcher.outputAddress = outputAddress
-            result = self.flowStitchWithMutiple(fileList, caculateOffsetMethod)
+            result = self.flowStitchWithMultiple(fileList, calculateOffsetMethod)
             self.tempImageFeature.isBreak = True
             if len(result) == 1:
                 cv2.imwrite(outputAddress + "\\stitching_result_" + str(i) + "." + outputfileExtension, result[0])
@@ -180,10 +186,10 @@ class Stitcher(Utility.Method):
             endTime = time.time()
             print("Time Consuming for " + fileAddress + " is " + str(endTime - startTime))
 
-    def calculateOffsetForPhaseCorrleate(self, dirAddress):
+    def calculateOffsetForPhaseCorrelate(self, dirAddress):
         """
         功能：采用相位相关法计算偏移量（不完善）
-        :param dirAddress:
+        :param dirAddress: 图像文件夹地址
         :return:
         """
         (dir1, dir2) = dirAddress
@@ -201,14 +207,11 @@ class Stitcher(Utility.Method):
         self.printAndWrite("  The offset of stitching: dx is " + str(offset[0]) + " dy is " + str(offset[1]))
         return (status, offset)
 
-    def calculateOffsetForPhaseCorrleateIncre(self, images):
+    def calculateOffsetForPhaseCorrelateIncre(self, images):
         '''
         功能：采用相位相关法计算偏移量-考虑增长搜索区域（不完善）
         :param images: [imageA, imageB]
-        :param registrateMethod: list:
-        :param fuseMethod:
-        :param direction: stitching direction
-        :return:
+        :return: (status, offset)
         '''
         (imageA, imageB) = images
         offset = [0, 0]
@@ -262,7 +265,7 @@ class Stitcher(Utility.Method):
         '''
         功能：采用特征搜索计算偏移量
         :param images: [imageA, imageB]
-        :return:(status, offset)
+        :return: (status, offset)
         '''
         (imageA, imageB) = images
         offset = [0, 0]
@@ -308,7 +311,7 @@ class Stitcher(Utility.Method):
         '''
         功能：采用特征搜索计算偏移量-考虑增长搜索区域
         :param images: [imageA, imageB]
-        :return:(status, offset)
+        :return: (status, offset)
         '''
 
         (imageA, imageB) = images
@@ -492,7 +495,7 @@ class Stitcher(Utility.Method):
         :param images: [imageA, imageB]
         :param dx: x方向偏移量
         :param dy: y方向偏移量
-        :return:
+        :return: 融合后的图像
         """
         self.imageFusion.isColorMode = self.isColorMode
         (imageA, imageB) = images

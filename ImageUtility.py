@@ -68,72 +68,51 @@ class Method():
         功能：对于搜索增长方法，根据比例获得其搜索区域
         :param image: 原始图像
         :param direction: 搜索方向
-        :param order: ‘first’or'second'判断属于第几张图像
+        :param order: 'first' or 'second' 判断属于第几张图像
         :param searchRatio: 裁剪搜素区域的比例，默认搜索方向上的长度的0.1
         :return: 搜索区域
         """
         row, col = image.shape[:2]
-        roiRegion = np.zeros(image.shape, np.uint8)
-        if direction == 1:
-            searchLength = np.floor(row * searchRatio).astype(int)
-            if order == "first":
+        if direction in [1, 3]:  # Vertical directions
+            searchLength = int(np.floor(row * searchRatio))
+            if (direction == 1 and order == "first") or (direction == 3 and order == "second"):
                 roiRegion = image[row - searchLength:row, :]
-            elif order == "second":
-                roiRegion = image[0: searchLength, :]
-        elif direction == 2:
-            searchLength = np.floor(col * searchRatio).astype(int)
-            if order == "first":
+            else:
+                roiRegion = image[0:searchLength, :]
+        else:  # Horizontal directions
+            searchLength = int(np.floor(col * searchRatio))
+            if (direction == 2 and order == "first") or (direction == 4 and order == "second"):
                 roiRegion = image[:, col - searchLength:col]
-            elif order == "second":
-                roiRegion = image[:, 0: searchLength]
-        elif direction == 3:
-            searchLength = np.floor(row * searchRatio).astype(int)
-            if order == "first":
-                roiRegion = image[0: searchLength, :]
-            elif order == "second":
-                roiRegion = image[row - searchLength:row, :]
-        elif direction == 4:
-            searchLength = np.floor(col * searchRatio).astype(int)
-            if order == "first":
-                roiRegion = image[:, 0: searchLength]
-            elif order == "second":
-                roiRegion = image[:, col - searchLength:col]
+            else:
+                roiRegion = image[:, 0:searchLength]
         return roiRegion
 
     def getROIRegion(self, image, direction="horizontal", order="first", searchLength=150, searchLengthForLarge=-1):
         '''
         功能：对于搜索增长方法，根据固定长度获得其搜索区域（已弃用）
-        :param originalImage:需要裁剪的原始图像
-        :param direction:拼接的方向
-        :param order:该图片的顺序，是属于第一还是第二张图像
-        :param searchLength:搜索区域大小
-        :param searchLengthForLarge:对于行拼接和列拼接的搜索区域大小
-        :return:返回感兴趣区域图像
-        :type searchLength: np.int
+        :param originalImage: 需要裁剪的原始图像
+        :param direction: 拼接的方向
+        :param order: 该图片的顺序，是属于第一还是第二张图像
+        :param searchLength: 搜索区域大小，单位为像素
+        :param searchLengthForLarge: 对于行拼接和列拼接的搜索区域大小
+        :return: 返回感兴趣区域图像
         '''
         row, col = image.shape[:2]
-        if direction == "horizontal" or direction == 2:
-            if order == "first":
-                if searchLengthForLarge == -1:
-                    roiRegion = image[:, col - searchLength:col]
-                elif searchLengthForLarge > 0:
-                    roiRegion = image[row - searchLengthForLarge:row, col - searchLength:col]
-            elif order == "second":
-                if searchLengthForLarge == -1:
-                    roiRegion = image[:, 0: searchLength]
-                elif searchLengthForLarge > 0:
-                    roiRegion = image[0:searchLengthForLarge, 0: searchLength]
-        elif direction == "vertical" or direction == 1:
-            if order == "first":
-                if searchLengthForLarge == -1:
-                    roiRegion = image[row - searchLength:row, :]
-                elif searchLengthForLarge > 0:
-                    roiRegion = image[row - searchLength:row, col - searchLengthForLarge:col]
-            elif order == "second":
-                if searchLengthForLarge == -1:
-                    roiRegion = image[0: searchLength, :]
-                elif searchLengthForLarge > 0:
-                    roiRegion = image[0: searchLength, 0:searchLengthForLarge]
+        start_col, end_col, start_row, end_row = 0, col, 0, row
+
+        if direction in ["horizontal", 2]:
+            if searchLengthForLarge != -1:
+                searchLength = searchLengthForLarge
+            end_col = searchLength if order == "second" else col
+            start_col = col - searchLength if order == "first" else 0
+        elif direction in ["vertical", 1]:
+            if searchLengthForLarge != -1:
+                searchLength = searchLengthForLarge
+            end_row = searchLength if order == "second" else row
+            start_row = row - searchLength if order == "first" else 0
+
+        # Extract the region of interest based on the calculated indices
+        roiRegion = image[start_row:end_row, start_col:end_col]
         return roiRegion
 
     def getOffsetByMode(self, kpsA, kpsB, matches, offsetEvaluate = 10):
@@ -183,8 +162,8 @@ class Method():
         :param kpsA: 第一张图像的特征
         :param kpsB: 第二张图像的特征
         :param matches: 配准列表
-        :param offsetEvaluate:对于Ransac求属于最小范围的个数，大于本阈值，则正确
-        :return:返回(totalStatus, [dx, dy]), totalStatus 是否正确，[dx, dy]默认[0, 0]
+        :param offsetEvaluate: 对于Ransac求属于最小范围的个数，大于本阈值，则正确
+        :return: 返回(totalStatus, [dx, dy]), totalStatus 是否正确，[dx, dy]默认[0, 0]
         """
         totalStatus = False
         ptsA = np.float32([kpsA[i] for (_, i) in matches])
@@ -213,7 +192,7 @@ class Method():
         '''
         功能：Convert array to List, used for keypoints from GPUDLL to python List
         :param array: array from GPUDLL
-        :return:
+        :return: kps
         '''
         kps = []
         row, col = array.shape
@@ -225,7 +204,7 @@ class Method():
         '''
         功能：Convert array to List, used for DMatches from GPUDLL to python List
         :param array: array from GPUDLL
-        :return:
+        :return: matches
         '''
         descritpors = []
         row, col = array.shape
@@ -237,7 +216,7 @@ class Method():
         """
         功能:？
         :param array:
-        :return:
+        :return: kps, descriptors
         """
         kps = []
         descriptors = array[:, :, 1]
@@ -248,8 +227,8 @@ class Method():
     def detectAndDescribe(self, image, featureMethod):
         '''
     	功能：计算图像的特征点集合，并返回该点集＆描述特征
-    	:param image:需要分析的图像
-    	:return:返回特征点集，及对应的描述特征(kps, features)
+    	:param image: 需要分析的图像
+    	:return: 返回特征点集，及对应的描述特征(kps, features)
     	'''
         if self.isGPUAvailable == False: # CPU mode
             if featureMethod == "sift":
@@ -321,9 +300,9 @@ class Method():
         功能：匹配特征点
         :param featuresA: 第一张图像的特征点描述符
         :param featuresB: 第二张图像的特征点描述符
-        :return:返回匹配的对数matches
+        :return: 返回匹配的对数matches
         '''
-        if self.isGPUAvailable == False:        # CPU Mode
+        if self.isGPUAvailable == False:  # CPU Mode
             # 建立暴力匹配器
             if self.featureMethod == "surf" or self.featureMethod == "sift":
                 matcher = cv2.DescriptorMatcher_create("BruteForce")
@@ -371,8 +350,8 @@ class Method():
     def resizeImg(self, image, resizeTimes, interMethod = cv2.INTER_AREA):
         """
         功能：缩放图像
-        :param image:原图像
-        :param resizeTimes:缩放比例
+        :param image: 原图像
+        :param resizeTimes: 缩放比例
         :param interMethod: 插值方法，默认cv2.INTER_AREA
         :return:
         """
@@ -385,9 +364,9 @@ class Method():
     def rectifyFinalImg(self, image, regionLength = 10):
         """
         功能：测试用，尚不完善
-        :param image:
-        :param regionLength:
-        :return:
+        :param image: 图像
+        :param regionLength: 区域长度
+        :return: 返回处理后的图像
         """
         (h, w) = image.shape
         print("h:" + str(h))
@@ -404,25 +383,22 @@ class Method():
         print("noneZeroNum:" + str(noneZeroNum))
         print("zeroNum:" + str(zeroNum))
         print("division:" + str(noneZeroNum / h))
+
+        # Determine if rotation is needed based on non-zero pixel ratios and corner values
         if (noneZeroNum / h) < 0.3:
             resultImage = image
-        elif upperLeft == 0 and bottomRight == 0 and upperRight != 0 and bottomLeft != 0:      # 左边低，右边高
-            print(1)
-            center = (w // 2, h // 2)
-            print(w)
-            print(h)
-            angle = math.atan(center[1] / center[0] * 180 / math.pi)
-            print(str(angle))
-            M = cv2.getRotationMatrix2D(center, -1 * angle, 1.0)
-            print(M)
-            resultImage = cv2.warpAffine(image, M, (w, h))
-        elif upperLeft != 0 and bottomRight != 0 and upperRight == 0 and bottomLeft == 0:    # 左边高，右边低
-            print(2)
-            center = (w // 2, h // 2)
-            angle = math.atan(center[1] / center[0] * 180 / math.pi)
-            print(str(angle))
-            M = cv2.getRotationMatrix2D(center, angle, 1.0)
-            resultImage = cv2.warpAffine(image, M, (w, h))
         else:
-            resultImage = image
+            # 左边低，右边高 或 左边高，右边低
+            if (upperLeft == 0 and bottomRight == 0 and upperRight != 0 and bottomLeft != 0) or \
+            (upperLeft != 0 and bottomRight != 0 and upperRight == 0 and bottomLeft == 0):
+                print("Condition met for rotation")
+                center = (w // 2, h // 2)
+                angle = math.atan(center[1] / center[0]) * 180 / math.pi
+                # Determine the direction of rotation based on corner values
+                angle = -angle if upperLeft == 0 else angle
+                print(f"Center: {center}, Angle: {angle}")
+                M = cv2.getRotationMatrix2D(center, angle, 1.0)
+                resultImage = cv2.warpAffine(image, M, (w, h))
+            else:
+                resultImage = image
         return resultImage

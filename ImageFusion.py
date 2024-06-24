@@ -385,7 +385,7 @@ class ImageFusion(Utility.Method):
         cv2.imshow("imageA", imageA)
         cv2.imshow("imageB", imageB)
         cv2.waitKey(0)
-        value = self.caculateVaule(images)
+        value = self.calculateValue(images)
         # print(value)
         mask = 1 - self.findOptimalSeamLine(value, direction)
         # cv2.namedWindow("mask", 0)
@@ -400,7 +400,7 @@ class ImageFusion(Utility.Method):
         cv2.waitKey(0)
         return np.uint8(self.BlendArbitrary(imageA,imageB, mask, 4))
 
-    def caculateVaule(self, images):
+    def calculateValue(self, images):
         (imageA, imageB) = images
         row, col = imageA.shape[:2]
         # value = np.zeros(imageA.shape, dtype=np.float32)
