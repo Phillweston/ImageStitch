@@ -207,8 +207,8 @@ class Stitcher(Utility.Method):
                     (offsetTemp, response) = cv2.phaseCorrelate(np.float32(roiImageA), np.float32(roiImageB), window=hann)
                 else:
                     (offsetTemp, response) = cv2.phaseCorrelate(np.float64(roiImageA), np.float64(roiImageB))
-
-                offset = [int(offsetTemp[1]), int(offsetTemp[0])]
+                offset[0] = np.int(offsetTemp[1])
+                offset[1] = np.int(offsetTemp[0])
                 # self.printAndWrite("offset: " + str(offset))
                 # self.printAndWrite("respnse: " + str(response))
                 if response > self.phaseResponseThreshold:
@@ -216,8 +216,8 @@ class Stitcher(Utility.Method):
                     break
                 else:
                     localDirection = self.directionIncrease(localDirection)
-                    if localDirection == iniDirection:
-                        break
+                if localDirection == iniDirection:
+                    break
             if status:
                 if localDirection == 1:
                     offset[0] += imageA.shape[0] - int(i * self.roiRatio * imageA.shape[0])
@@ -316,20 +316,20 @@ class Stitcher(Utility.Method):
                         (status, offset) = self.getOffsetByMode(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
                     elif self.offsetCalculate == "ransac":
                         (status, offset, _) = self.getOffsetByRansac(kpsA, kpsB, matches, offsetEvaluate = self.offsetEvaluate)
-                if status or localDirection == iniDirection:
+                if status:
                     break
                 localDirection = self.directionIncrease(localDirection)
-
+                if localDirection == iniDirection:
+                    break
             if status:
-                adjustment = int(i * self.roiRatio * imageA.shape[0 if localDirection in [1, 3] else 1])
                 if localDirection == 1:
-                    offset[0] += imageA.shape[0] - adjustment
+                    offset[0] += imageA.shape[0] - int(i * self.roiRatio * imageA.shape[0])
                 elif localDirection == 2:
-                    offset[1] += imageA.shape[1] - adjustment
+                    offset[1] += imageA.shape[1] - int(i * self.roiRatio * imageA.shape[1])
                 elif localDirection == 3:
-                    offset[0] -= imageB.shape[0] - adjustment
+                    offset[0] -= (imageB.shape[0] - int(i * self.roiRatio * imageB.shape[0]))
                 elif localDirection == 4:
-                    offset[1] -= imageB.shape[1] - adjustment
+                    offset[1] -= (imageB.shape[1] - int(i * self.roiRatio * imageB.shape[1]))
                 self.direction = localDirection
                 break
 

@@ -46,44 +46,52 @@ class ImageFusion(Utility.Method):
         :return: 两个权值矩阵
         '''
         (imageA, imageB) = images
-        row, col = imageA.shape[:2]
         weightMatA = np.ones(imageA.shape, dtype=np.float32)
         weightMatB = np.ones(imageA.shape, dtype=np.float32)
+        row, col = imageA.shape[:2]
         
         # Efficient comparison using numpy
-        compareList = [np.count_nonzero(imageA[:row // 2, :col // 2] > 0),
-                    np.count_nonzero(imageA[row // 2:, :col // 2] > 0),
-                    np.count_nonzero(imageA[row // 2:, col // 2:] > 0),
-                    np.count_nonzero(imageA[:row // 2, col // 2:] > 0)]
-
+        compareList = [
+            np.count_nonzero(imageA[:row // 2, :col // 2] > 0),
+            np.count_nonzero(imageA[row // 2:, :col // 2] > 0),
+            np.count_nonzero(imageA[row // 2:, col // 2:] > 0),
+            np.count_nonzero(imageA[:row // 2, col // 2:] > 0)
+        ]
+        
+        # Determine the quadrant with the minimum non-zero count
         index = np.argmin(compareList)
+        
+        # Preparing weight matrices
+        weightMatB_1 = np.ones_like(weightMatB)
+        weightMatB_2 = np.ones_like(weightMatB)
+        
+        # Depending on the index, determine the fading directions
+        # Vertical and horizontal limits for fading, initialized to None
+        vert_limit = None
+        horiz_limit = None
 
-        # Use numpy broadcasting for weight assignments
-        if index == 2:  # Top-left quadrant
-            rowIndex = np.argmax(np.any(imageA[:, :-1] != -1, axis=0))
-            colIndex = np.argmax(np.any(imageA[:-1, :] != -1, axis=1))
-            weightMatB[:rowIndex + 1, :] *= np.linspace(0, 1, rowIndex + 1)[:, None]
-            weightMatB[:, :colIndex + 1] *= np.linspace(0, 1, colIndex + 1)
+        # Set the vertical and horizontal fading limits based on the quadrant
+        if index in (2, 3):  # Top or bottom left quadrant
+            vert_limit = np.argmax(np.any(imageA[:, :-1] != -1, axis=0))
+            horiz_limit = np.argmax(np.any(imageA[1:, :] != -1, axis=1)) if index == 3 else np.argmax(np.any(imageA[:-1, :] != -1, axis=1))
+        elif index in (0, 1):  # Bottom or top right quadrant
+            vert_limit = np.argmax(np.any(imageA[:, 1:] != -1, axis=0))
+            horiz_limit = np.argmax(np.any(imageA[1:, :] != -1, axis=1)) if index == 0 else np.argmax(np.any(imageA[:-1, :] != -1, axis=1))
 
-        elif index == 3:  # Bottom-left quadrant
-            rowIndex = np.argmax(np.any(imageA[:, :-1] != -1, axis=0))
-            colIndex = np.argmax(np.any(imageA[1:, :] != -1, axis=1))
-            weightMatB[rowIndex:, :] *= np.linspace(1, 0, row - rowIndex)[:, None]
-            weightMatB[:, :colIndex + 1] *= np.linspace(0, 1, colIndex + 1)
+        # Apply vertical gradient
+        if vert_limit is not None:
+            gradient = np.linspace(0, 1, vert_limit + 1)
+            weightMatB_1[:, :vert_limit + 1] *= gradient[None, :] if index in (2, 3) else gradient[::-1][None, :]
 
-        elif index == 0:  # Bottom-right quadrant
-            rowIndex = np.argmax(np.any(imageA[:, 1:] != -1, axis=0))
-            colIndex = np.argmax(np.any(imageA[1:, :] != -1, axis=1))
-            weightMatB[rowIndex:, :] *= np.linspace(1, 0, row - rowIndex)[:, None]
-            weightMatB[:, colIndex:] *= np.linspace(1, 0, col - colIndex)
+        # Apply horizontal gradient
+        if horiz_limit is not None:
+            gradient = np.linspace(0, 1, horiz_limit + 1)
+            weightMatB_2[horiz_limit:, :] *= gradient[:, None] if index in (0, 3) else gradient[::-1][:, None]
 
-        elif index == 1:  # Top-right quadrant
-            rowIndex = np.argmax(np.any(imageA[:, 1:] != -1, axis=0))
-            colIndex = np.argmax(np.any(imageA[:-1, :] != -1, axis=1))
-            weightMatB[:rowIndex + 1, :] *= np.linspace(0, 1, rowIndex + 1)[:, None]
-            weightMatB[:, colIndex:] *= np.linspace(1, 0, col - colIndex)
-
+        # Combine both weight matrices
+        weightMatB = weightMatB_1 * weightMatB_2
         weightMatA = 1 - weightMatB
+        
         return weightMatA, weightMatB
 
     def fuseByFadeInAndFadeOut(self, images, dx, dy):
