@@ -78,13 +78,11 @@ def stitchWithFeature(
     stitcher = Stitcher()
 
     if enableIncremental:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
+        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
     else:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
+        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
-
-    return f"Stitching completed! Check the output directory: {outputAddress}"
 
 iface = gr.Interface(
     fn=stitchWithFeature,
@@ -111,7 +109,7 @@ iface = gr.Interface(
         gr.Radio(choices=["jpg", "png"], value="jpg", label="Output File Extension", info="Output file extension for stitching.")
     ],
     outputs=[
-        gr.Text(label="Output", info="Output message after stitching.", placeholder="Output message after stitching will be shown here.")
+        gr.Gallery(label='Saved Images')
     ],
     title="Image Stitching Interface",
     description="Designed by Phill Weston, all rights reserved."

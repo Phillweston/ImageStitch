@@ -147,9 +147,10 @@ class Stitcher(Utility.Method):
         :param startNum: 从第几个文件开始拼
         :param fileExtension: 输入文件扩展名
         :param outputfileExtension:输出文件扩展名
-        :return:
+        :return: 输出拼接文件路径
         """
         os.makedirs(outputAddress, exist_ok=True)  # Ensure output directory exists
+        generated_images = []
         for i in range(startNum, fileNum+1):
             startTime = time.time()
             fileAddress = projectAddress + "\\" + str(i) + "\\"
@@ -160,14 +161,17 @@ class Stitcher(Utility.Method):
             result = self.flowStitchWithMultiple(fileList, calculateOffsetMethod)
             self.tempImageFeature.isBreak = True
             if len(result) == 1:
-                cv2.imwrite(outputAddress + "\\stitching_result_" + str(i) + "." + outputfileExtension, result[0])
-                # cv2.imwrite(outputAddress + "\\" + outputName + "." + outputfileExtension, result[0])
+                image_path = outputAddress + "\\stitching_result_" + str(i) + "." + outputfileExtension
+                cv2.imwrite(image_path, result[0])
+                generated_images.append(image_path)
             else:
                 for j in range(0, len(result)):
-                    cv2.imwrite(outputAddress + "\\stitching_result_" + str(i) + "_" + str(j+1) + "." + outputfileExtension, result[j])
-                    # cv2.imwrite(outputAddress + "\\" + outputName + "_" + str(j + 1) + "." + outputfileExtension,result[j])
+                    image_path = outputAddress + "\\stitching_result_" + str(i) + "_" + str(j+1) + "." + outputfileExtension
+                    cv2.imwrite(image_path, result[j])
+                    generated_images.append(image_path)
             endTime = time.time()
             self.printAndWrite("Time Consuming for " + fileAddress + " is " + str(endTime - startTime))
+        return generated_images
 
     def calculateOffsetForPhaseCorrelate(self, dirAddress):
         """

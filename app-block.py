@@ -78,13 +78,11 @@ def stitchWithFeature(
 
     outputAddress = outputFolderPrefix + str.capitalize(Stitcher.fuseMethod) + "\\"
     if enableIncremental:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
+        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
     else:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
+        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
-
-    return f"Stitching completed! Check the output directory: {outputAddress}"
 
 with gr.Blocks() as iface:
     gr.Markdown("# Image Stitching Interface \nDesigned by [Phill Weston](https://github.com/Phillweston), all rights reserved.")
@@ -133,7 +131,7 @@ with gr.Blocks() as iface:
                 projectAddress, outputFolder, fileNum, startNum, inputFileExtension, outputfileExtension
             ],
             outputs=[
-                gr.Text(label="Output", info="Output message after stitching.", placeholder="Output message after stitching will be shown here.")
+                gr.Gallery(label='Saved Images')
             ]
         )
 
