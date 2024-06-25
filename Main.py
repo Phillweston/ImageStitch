@@ -55,23 +55,27 @@ def stitchWithFeature():
     Stitcher.direction = 1;  Stitcher.directIncre = 0;
     projectAddress = "demoImages\\iron"
     outputAddress = "result\\iron" + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearchIncre,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
 
     Stitcher.direction = 1;  Stitcher.directIncre = 1;
     projectAddress = "demoImages\\dendriticCrystal"
     outputAddress = "result\\dendriticCrystal" + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearchIncre,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
 
     Stitcher.direction = 4;  Stitcher.directIncre = 0;
     projectAddress = "demoImages\\zirconBSE"
     outputAddress = "result\\zirconBSE" + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearch,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
 
     Stitcher.direction = 4;  Stitcher.directIncre = 0;
     projectAddress = "demoImages\\zirconCL"
+    Stitcher.outputAddress = outputAddress
     outputAddress = "result\\zirconCL" + str.capitalize(Stitcher.fuseMethod) + "\\"
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearch,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
@@ -79,12 +83,14 @@ def stitchWithFeature():
     Stitcher.direction = 4;  Stitcher.directIncre = 0;
     projectAddress = "demoImages\\zirconREM"
     outputAddress = "result\\zirconREM" + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearch,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
 
     Stitcher.direction = 4;  Stitcher.directIncre = 0;
     projectAddress = "demoImages\\zirconTEM"
     outputAddress = "result\\zirconTEM" + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, 1, stitcher.calculateOffsetForFeatureSearch,
                             startNum=1, fileExtension="jpg", outputfileExtension="jpg")
 

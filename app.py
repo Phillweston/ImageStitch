@@ -60,23 +60,23 @@ def stitchWithFeature(
         inputFileExtension,
         outputfileExtension
     ):
-    Stitcher.featureMethod = featureMethod             # "sift","surf" or "orb"
-    Stitcher.isColorMode = isColorMode                 # True:color, False: gray
-    Stitcher.windowing = windowing                   # Enable windowing for stitching
+    Stitcher.featureMethod = featureMethod               # "sift", "surf" or "orb"
+    Stitcher.isColorMode = isColorMode                   # True: color, False: gray
+    Stitcher.windowing = windowing                       # Enable windowing for stitching
     Stitcher.isGPUAvailable = isGPUAvailable             # True: GPU, False: CPU
-    Stitcher.isEnhance = isEnhance                  # True: enhance, False: not enhance
-    Stitcher.isClahe = isClahe                    # True: clahe, False: not clahe
-    Stitcher.searchRatio = searchRatio                 # 0.75 is common value for matches
+    Stitcher.isEnhance = isEnhance                       # True: enhance, False: not enhance
+    Stitcher.isClahe = isClahe                           # True: clahe, False: not clahe
+    Stitcher.searchRatio = searchRatio                   # 0.75 is common value for matches
     Stitcher.offsetCalculate = offsetCalculate           # "mode" or "ransac"
-    Stitcher.offsetEvaluate = offsetEvaluate                 # 3 menas nums of matches for mode, 3.0 menas  of matches for ransac
-    Stitcher.roiRatio = roiRatio                     # roi length for stitching in first direction
-    Stitcher.fuseMethod = fuseMethod    # "notFuse","average","maximum","minimum","fadeInAndFadeOut","trigonometric", "multiBandBlending"
+    Stitcher.offsetEvaluate = offsetEvaluate             # 3 means nums of matches for mode, 3.0 means num of matches for ransac
+    Stitcher.roiRatio = roiRatio                         # roi length for stitching in first direction
+    Stitcher.fuseMethod = fuseMethod                     # "notFuse", "average", "maximum", "minimum", "fadeInAndFadeOut", "trigonometric", "multiBandBlending" and "optimalSeamLine"
+    Stitcher.direction = direction                       # direction for stitching
+    Stitcher.directIncre = directIncre                   # direction increment for stitching
+    outputAddress = outputFolderPrefix + str.capitalize(Stitcher.fuseMethod) + "\\"
+    Stitcher.outputAddress = outputAddress
     stitcher = Stitcher()
 
-    Stitcher.direction = direction
-    Stitcher.directIncre = directIncre
-
-    outputAddress = outputFolderPrefix + str.capitalize(Stitcher.fuseMethod) + "\\"
     if enableIncremental:
         stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
@@ -99,7 +99,7 @@ iface = gr.Interface(
         gr.Radio(choices=["mode", "ransac"], value="mode", label="Offset Calculate", info="Offset calculate method for stitching."),
         gr.Slider(minimum=1, maximum=10, value=3, step=1, label="Offset Evaluate", info="Offset evaluate for stitching."),
         gr.Slider(minimum=0.1, maximum=0.5, value=0.2, step=0.05, label="ROI Ratio", info="ROI ratio for stitching in first direction."),
-        gr.Radio(choices=["fadeInAndFadeOut", "notFuse", "average", "maximum", "minimum", "trigonometric", "multiBandBlending"], value="fadeInAndFadeOut", label="Fuse Method", info="Fuse method for stitching."),
+        gr.Radio(choices=["fadeInAndFadeOut", "notFuse", "average", "maximum", "minimum", "trigonometric", "multiBandBlending", "optimalSeamLine"], value="fadeInAndFadeOut", label="Fuse Method", info="Fuse method for stitching."),
         gr.Slider(minimum=0, maximum=4, step=1, value=1, label="Direction", info="Direction for stitching."),
         gr.Slider(minimum=-1, maximum=1, step=1, value=0, label="Direction Increment", info="Direction increment for stitching."),
         gr.Checkbox(value=True, label="Enable Incremental Method to Calculate Offset for Feature Searching", info="Enable Incremental Method to Calculate Offset for Feature Searching."),

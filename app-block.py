@@ -60,22 +60,22 @@ def stitchWithFeature(
         inputFileExtension,
         outputfileExtension
     ):
-    Stitcher.featureMethod = featureMethod             # "sift","surf" or "orb"
-    Stitcher.isColorMode = isColorMode                 # True:color, False: gray
-    Stitcher.windowing = windowing                   # Enable windowing for stitching
+    Stitcher.featureMethod = featureMethod               # "sift", "surf" or "orb"
+    Stitcher.isColorMode = isColorMode                   # True: color, False: gray
+    Stitcher.windowing = windowing                       # Enable windowing for stitching
     Stitcher.isGPUAvailable = isGPUAvailable             # True: GPU, False: CPU
-    Stitcher.isEnhance = isEnhance                  # True: enhance, False: not enhance
-    Stitcher.isClahe = isClahe                    # True: clahe, False: not clahe
-    Stitcher.searchRatio = searchRatio                 # 0.75 is common value for matches
+    Stitcher.isEnhance = isEnhance                       # True: enhance, False: not enhance
+    Stitcher.isClahe = isClahe                           # True: clahe, False: not clahe
+    Stitcher.searchRatio = searchRatio                   # 0.75 is common value for matches
     Stitcher.offsetCalculate = offsetCalculate           # "mode" or "ransac"
-    Stitcher.offsetEvaluate = offsetEvaluate                 # 3 menas nums of matches for mode, 3.0 menas  of matches for ransac
-    Stitcher.roiRatio = roiRatio                     # roi length for stitching in first direction
-    Stitcher.fuseMethod = fuseMethod    # "notFuse","average","maximum","minimum","fadeInAndFadeOut","trigonometric", "multiBandBlending"
-
-    Stitcher.direction = direction
-    Stitcher.directIncre = directIncre
+    Stitcher.offsetEvaluate = offsetEvaluate             # 3 means nums of matches for mode, 3.0 means num of matches for ransac
+    Stitcher.roiRatio = roiRatio                         # roi length for stitching in first direction
+    Stitcher.fuseMethod = fuseMethod                     # "notFuse", "average", "maximum", "minimum", "fadeInAndFadeOut", "trigonometric", "multiBandBlending" and "optimalSeamLine"
+    Stitcher.direction = direction                       # direction for stitching
+    Stitcher.directIncre = directIncre                   # incremental step for direction adjustment
 
     stitcher = Stitcher()
+
     outputAddress = outputFolderPrefix + str.capitalize(Stitcher.fuseMethod) + "\\"
     if enableIncremental:
         stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
@@ -107,7 +107,7 @@ with gr.Blocks() as iface:
                 offsetCalculate = gr.Radio(choices=["mode", "ransac"], value="mode", label="Offset Calculation Method", info="Method to calculate offset between images.")
                 offsetEvaluate = gr.Slider(minimum=1, maximum=10, value=3, step=1, label="Offset Evaluation Metric", info="Metric to evaluate the calculated offset.")
                 roiRatio = gr.Slider(minimum=0.1, maximum=0.5, value=0.2, step=0.05, label="ROI Ratio", info="Region of Interest ratio for feature extraction.")
-                fuseMethod = gr.Radio(choices=["notFuse", "average", "maximum", "minimum", "fadeInAndFadeOut", "trigonometric", "multiBandBlending"], value="fadeInAndFadeOut", label="Fuse Method", info="Method to fuse overlapping areas.")
+                fuseMethod = gr.Radio(choices=["notFuse", "average", "maximum", "minimum", "fadeInAndFadeOut", "trigonometric", "multiBandBlending", "optimalSeamLine"], value="fadeInAndFadeOut", label="Fuse Method", info="Method to fuse overlapping areas.")
 
             gr.Markdown("### Direction and Incremental Settings")
             with gr.Row():

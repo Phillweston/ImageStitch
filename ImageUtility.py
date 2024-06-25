@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import math
 from cv2 import cuda
 
 
@@ -128,7 +127,8 @@ class Method():
         if len(matches) == 0:
             totalStatus = False
             return (totalStatus, [0, 0])
-        dxList = []; dyList = [];
+        dxList = []
+        dyList = []
         for trainIdx, queryIdx in matches:
             ptA = (kpsA[queryIdx][1], kpsA[queryIdx][0])
             ptB = (kpsB[trainIdx][1], kpsB[trainIdx][0])
@@ -139,7 +139,8 @@ class Method():
             dxList.append(int(ptA[0] - ptB[0]))
             dyList.append(int(ptA[1] - ptB[1]))
         if len(dxList) == 0:
-            dxList.append(0); dyList.append(0)
+            dxList.append(0)
+            dyList.append(0)
         # Get Mode offset in [dxList, dyList], thanks for clovermini
         zipped = zip(dxList, dyList)
         zip_list = list(zipped)
@@ -182,8 +183,7 @@ class Method():
         if trueCount >= offsetEvaluate:
             totalStatus = True
             adjustH = H.copy()
-            adjustH[0, 2] = 0;adjustH[1, 2] = 0
-            adjustH[2, 0] = 0;adjustH[2, 1] = 0
+            adjustH[0, 2] = adjustH[1, 2] = adjustH[2, 0] = adjustH[2, 1] = 0
             return (totalStatus ,[np.round(np.array(H).astype(np.int)[1,2]) * (-1), np.round(np.array(H).astype(np.int)[0,2]) * (-1)], adjustH)
         else:
             return (totalStatus, [0, 0], 0)
@@ -215,7 +215,7 @@ class Method():
     def npToKpsAndDescriptors(self, array):
         """
         功能：Convert array to kps and descriptors
-        :param array:
+        :param array: array from GPUDLL
         :return: kps, descriptors
         """
         kps = []
@@ -228,6 +228,7 @@ class Method():
         '''
     	功能：计算图像的特征点集合，并返回该点集＆描述特征
     	:param image: 需要分析的图像
+        :param featureMethod: 特征提取方法
     	:return: 返回特征点集，及对应的描述特征(kps, features)
     	'''
         if self.isGPUAvailable == False: # CPU mode
@@ -353,7 +354,7 @@ class Method():
         :param image: 原图像
         :param resizeTimes: 缩放比例
         :param interMethod: 插值方法，默认cv2.INTER_AREA
-        :return:
+        :return: 返回缩放后的图像
         """
         (h, w) = image.shape
         resizeH = int(h * resizeTimes)
@@ -393,7 +394,7 @@ class Method():
             (upperLeft != 0 and bottomRight != 0 and upperRight == 0 and bottomLeft == 0):
                 print("Condition met for rotation")
                 center = (w // 2, h // 2)
-                angle = math.atan(center[1] / center[0]) * 180 / math.pi
+                angle = np.arctan2(center[1] / center[0]) * 180 / np.pi
                 # Determine the direction of rotation based on corner values
                 angle = -angle if upperLeft == 0 else angle
                 print(f"Center: {center}, Angle: {angle}")
