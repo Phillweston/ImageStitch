@@ -62,10 +62,8 @@ class Stitcher(Utility.Method):
             # imageB = cv2.imread(fileList[fileIndex + 1], 0)
             imageA = cv2.imdecode(np.fromfile(fileList[fileIndex], dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
             imageB = cv2.imdecode(np.fromfile(fileList[fileIndex + 1], dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
-            if calculateOffsetMethod == self.calculateOffsetForPhaseCorrelate:
-                (status, offset) = self.calculateOffsetForPhaseCorrelate([fileList[fileIndex], fileList[fileIndex + 1]])
-            else:
-                (status, offset) = calculateOffsetMethod([imageA, imageB])
+
+            (status, offset) = calculateOffsetMethod([imageA, imageB])
             if not status:
                 self.printAndWrite("  " + str(fileList[fileIndex]) + " and " + str(fileList[fileIndex+1]) + " cannot be stitched")
                 break
@@ -90,7 +88,7 @@ class Stitcher(Utility.Method):
         """
         功能：多段序列拼接，从list的第一张拼接到最后一张，由于中间可能出现拼接失败，将分段拼接结果共同返回
         :param fileList: 图像地址序列
-        :param calculateOffsetMethod:计算偏移量方法
+        :param calculateOffsetMethod: 计算偏移量方法
         :return: 拼接的图像list
         """
         result = []
@@ -173,18 +171,45 @@ class Stitcher(Utility.Method):
             self.printAndWrite("Time Consuming for " + fileAddress + " is " + str(endTime - startTime))
         return generated_images
 
-    def calculateOffsetForPhaseCorrelate(self, dirAddress):
+    def calculateOffsetForPhaseCorrelate(self, images):
+        # TODO:
         """
         功能：采用相位相关法计算偏移量（不完善）
-        :param dirAddress: 图像文件夹地址
+        :param images: [imageA, imageB]
         :return: (status, offset)
         """
-        (dir1, dir2) = dirAddress
-        offsetList = self.phase.phaseCorrelation(dir1, dir2)
-        # Convert offset list to integers and swap the order to match the expected output
-        offset = [int(np.round(offsetList[1])), int(np.round(offsetList[0]))]
-        self.printAndWrite("  The offset of stitching: dx is " + str(offset[0]) + " dy is " + str(offset[1]))
-        return (True, offset)
+        (imageA, imageB) = images
+        status = False
+        offset = [0, 0]
+        iniDirection = self.direction
+        localDirection = iniDirection
+        # Optional: Preprocessing can be applied here if needed (e.g., filtering, resizing)
+        roiImageA = self.getROIRegion(imageA, direction=localDirection)
+        roiImageB = self.getROIRegion(imageB, direction=localDirection)
+
+        if roiImageA.shape != roiImageB.shape:
+            # Resize roiImageB to match roiImageA's shape
+            roiImageB = cv2.resize(roiImageB, (roiImageA.shape[1], roiImageA.shape[0]))
+
+        # Applying phase correlation directly to the entire images
+        if self.windowing:
+            hann = cv2.createHanningWindow((roiImageA.shape[1], roiImageA.shape[0]), cv2.CV_64F)
+            (offsetTemp, response) = cv2.phaseCorrelate(np.float32(roiImageA), np.float32(roiImageB), window=hann)
+        else:
+            (offsetTemp, response) = cv2.phaseCorrelate(np.float64(roiImageA), np.float64(roiImageB))
+
+        # Update offset based on the phase correlation result
+        offset[0] = int(np.round(offsetTemp[1]))
+        offset[1] = int(np.round(offsetTemp[0]))
+
+        # Check the response to determine if the matching was successful
+        if response > self.phaseResponseThreshold:
+            status = True
+            self.printAndWrite("  The offset of stitching: dx is " + str(offset[0]) + " dy is " + str(offset[1]))
+            return (status, offset)
+        else:
+            self.printAndWrite("  The phase correlation response is too low.")
+            return (status, "The two images cannot be matched adequately.")
 
     def calculateOffsetForPhaseCorrelateIncre(self, images):
         '''
@@ -195,7 +220,7 @@ class Stitcher(Utility.Method):
         (imageA, imageB) = images
         offset = [0, 0]
         status = False
-        maxI = (np.floor(0.5 / self.roiRatio) + 1).astype(int)+ 1
+        maxI = (np.floor(0.5 / self.roiRatio) + 1).astype(int) + 1
         iniDirection = self.direction
         localDirection = iniDirection
         for i in range(1, maxI):
@@ -206,13 +231,17 @@ class Stitcher(Utility.Method):
                 roiImageA = self.getROIRegionForIncreMethod(imageA, direction=localDirection, order="first", searchRatio = i * self.roiRatio)
                 roiImageB = self.getROIRegionForIncreMethod(imageB, direction=localDirection, order="second", searchRatio = i * self.roiRatio)
 
+                if roiImageA.shape != roiImageB.shape:
+                    # Resize roiImageB to match roiImageA's shape
+                    roiImageB = cv2.resize(roiImageB, (roiImageA.shape[1], roiImageA.shape[0]))
+
                 if self.windowing:
                     hann = cv2.createHanningWindow(winSize=(roiImageA.shape[1], roiImageA.shape[0]), type=5)
                     (offsetTemp, response) = cv2.phaseCorrelate(np.float32(roiImageA), np.float32(roiImageB), window=hann)
                 else:
                     (offsetTemp, response) = cv2.phaseCorrelate(np.float64(roiImageA), np.float64(roiImageB))
-                offset[0] = np.int(offsetTemp[1])
-                offset[1] = np.int(offsetTemp[0])
+                offset[0] = np.int32(offsetTemp[1])
+                offset[1] = np.int32(offsetTemp[0])
                 # self.printAndWrite("offset: " + str(offset))
                 # self.printAndWrite("respnse: " + str(response))
                 if response > self.phaseResponseThreshold:

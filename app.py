@@ -53,6 +53,7 @@ def stitchWithFeature(
         direction,
         directIncre,
         enableIncremental,
+        offsetCalculationMethod,
         projectAddress,
         outputFolderPrefix,
         fileNum,
@@ -78,11 +79,23 @@ def stitchWithFeature(
     stitcher = Stitcher()
 
     if enableIncremental:
-        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
+        if offsetCalculationMethod == 'FeatureSearch':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelateIncre,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
     else:
-        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
+        if offsetCalculationMethod == 'FeatureSearch':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelate,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
 
 iface = gr.Interface(
     fn=stitchWithFeature,
@@ -101,6 +114,7 @@ iface = gr.Interface(
         gr.Slider(minimum=0, maximum=4, step=1, value=1, label="Direction", info="Direction for stitching."),
         gr.Slider(minimum=-1, maximum=1, step=1, value=0, label="Direction Increment", info="Direction increment for stitching."),
         gr.Checkbox(value=True, label="Enable Incremental Method to Calculate Offset for Feature Searching", info="Enable Incremental Method to Calculate Offset for Feature Searching."),
+        gr.Radio(choices=["FeatureSearch", "PhaseCorrelate"], value="FeatureSearch", label="Offset Calculation Method", info="Offset calculation method for stitching."),
         gr.Textbox(label="Project Address", value="demoImages\\iron", placeholder="Input project address here", info="Input project address for stitching."),
         gr.Textbox(label="Output Folder Prefix", value="result\\iron", placeholder="Input output folder prefix here", info="Input output folder prefix for stitching."),
         gr.Number(label="File Number", value=1, info="Input file number for stitching."),

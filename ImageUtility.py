@@ -11,7 +11,7 @@ class Method():
     isPrintLog = True           # 是否在屏幕打印过程信息
 
     # 关于特征搜索的设置
-    featureMethod = "surf"      # "sift","surf" or "orb"
+    featureMethod = "surf"      # "sift", "surf" or "orb"
     roiRatio = 0.1              # roi length for stitching in first direction
     searchRatio = 0.75          # 0.75 is common value for matches
 
@@ -89,7 +89,7 @@ class Method():
     def getROIRegion(self, image, direction="horizontal", order="first", searchLength=150, searchLengthForLarge=-1):
         '''
         功能：对于搜索增长方法，根据固定长度获得其搜索区域（已弃用）
-        :param originalImage: 需要裁剪的原始图像
+        :param image: 需要裁剪的原始图像
         :param direction: 拼接的方向
         :param order: 该图片的顺序，是属于第一还是第二张图像
         :param searchLength: 搜索区域大小，单位为像素

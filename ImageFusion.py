@@ -42,7 +42,7 @@ class ImageFusion(Utility.Method):
     def getWeightsMatrix(self, images):
         '''
         功能：获取权值矩阵
-        :param images:  输入两个相同区域的图像
+        :param images: 输入两个相同区域的图像
         :return: 两个权值矩阵
         '''
         (imageA, imageB) = images
@@ -97,7 +97,7 @@ class ImageFusion(Utility.Method):
     def fuseByFadeInAndFadeOut(self, images, dx, dy):
         '''
         功能：渐入渐出融合
-        :param images:输入两个相同区域的图像
+        :param images: 输入两个相同区域的图像
         :param dx: x方向偏移
         :param dy: y方向偏移
         :return: 融合后的图像
@@ -289,10 +289,10 @@ class ImageFusion(Utility.Method):
             gp.append(G)
         return gp
 
-    #权值矩阵归一化
     def stretchImage(self, Region):
         """
         Stretch the input image region to enhance its contrast.
+        权值矩阵归一化
 
         Parameters:
         - Region: numpy.ndarray
@@ -329,10 +329,9 @@ class ImageFusion(Utility.Method):
             image = image.astype(np.uint8)
         return image
 
-    # OptialSeamLine's method 最佳缝合线方法
     def fuseByOptimalSeamLine(self, images, direction="horizontal"):
         '''
-        基于最佳缝合线的融合方法
+        OptialSeamLine's method 基于最佳缝合线的融合方法
         :param images:输入两个相同区域的图像
         :param direction: 横向拼接还是纵向拼接
         :return: 融合后的图像

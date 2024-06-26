@@ -53,6 +53,7 @@ def stitchWithFeature(
         direction,
         directIncre,
         enableIncremental,
+        offsetCalculationMethod,
         projectAddress,
         outputFolderPrefix,
         fileNum,
@@ -78,13 +79,23 @@ def stitchWithFeature(
     stitcher = Stitcher()
 
     if enableIncremental:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
+        if offsetCalculationMethod == 'FeatureSearch':
+            stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelateIncre,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
     else:
-        stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
+        if offsetCalculationMethod == 'FeatureSearch':
+            stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
-
-    return f"Stitching completed! Check the output directory: {outputAddress}"
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelate,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Stitch images with feature detection.')
@@ -102,6 +113,7 @@ if __name__=="__main__":
     parser.add_argument('--direction', type=int, default=1, help='Stitching direction')
     parser.add_argument('--directIncre', type=int, default=0, help='Direction increment')
     parser.add_argument('--enableIncremental', type=bool, default=True, help='Enable incremental stitching')
+    parser.add_argument('--offsetCalculationMethod', default='FeatureSearch', choices=['FeatureSearch', 'PhaseCorrelate'], help='Offset calculation method')
     parser.add_argument('--projectAddress', default='demoImages\\iron', help='Project images directory')
     parser.add_argument('--outputFolderPrefix', default='result\\iron', help='Output folder prefix')
     parser.add_argument('--fileNum', type=int, default=1, help='Number of files to stitch')
@@ -125,6 +137,7 @@ if __name__=="__main__":
         args.direction,
         args.directIncre,
         args.enableIncremental,
+        args.offsetCalculationMethod,
         args.projectAddress,
         args.outputFolderPrefix,
         args.fileNum,

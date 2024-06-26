@@ -53,6 +53,7 @@ def stitchWithFeature(
         direction,
         directIncre,
         enableIncremental,
+        offsetCalculationMethod,
         projectAddress,
         outputFolderPrefix,
         fileNum,
@@ -78,11 +79,23 @@ def stitchWithFeature(
 
     outputAddress = outputFolderPrefix + str.capitalize(Stitcher.fuseMethod) + "\\"
     if enableIncremental:
-        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
+        if offsetCalculationMethod == 'FeatureSearch':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearchIncre,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelateIncre,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
     else:
-        return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
+        if offsetCalculationMethod == 'FeatureSearch':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForFeatureSearch,
                                 startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        elif offsetCalculationMethod == 'PhaseCorrelate':
+            return stitcher.imageSetStitchWithMultiple(projectAddress, outputAddress, fileNum, stitcher.calculateOffsetForPhaseCorrelate,
+                                startNum=startNum, fileExtension=inputFileExtension, outputfileExtension=outputfileExtension)
+        else:
+            raise ValueError("Invalid offset calculation method")
 
 with gr.Blocks() as iface:
     gr.Markdown("# Image Stitching Interface \nDesigned by [Phill Weston](https://github.com/Phillweston), all rights reserved.")
@@ -107,11 +120,12 @@ with gr.Blocks() as iface:
                 roiRatio = gr.Slider(minimum=0.1, maximum=0.5, value=0.2, step=0.05, label="ROI Ratio", info="Region of Interest ratio for feature extraction.")
                 fuseMethod = gr.Radio(choices=["notFuse", "average", "maximum", "minimum", "fadeInAndFadeOut", "trigonometric", "multiBandBlending", "optimalSeamLine"], value="fadeInAndFadeOut", label="Fuse Method", info="Method to fuse overlapping areas.")
 
-            gr.Markdown("### Direction and Incremental Settings")
+            gr.Markdown("### Direction and Offset Calculation Settings")
             with gr.Row():
                 direction = gr.Number(label="Direction", value=1, info="Direction for stitching processing.")
                 directIncre = gr.Number(label="Direction Increment", value=0, info="Incremental step for direction adjustment.")
                 enableIncremental = gr.Checkbox(value=True, label="Enable Incremental", info="Enable incremental processing for feature searching.")
+                offsetCalculationMethod = gr.Radio(choices=["FeatureSearch", "PhaseCorrelate"], value="FeatureSearch", label="Offset Calculation Method", info="Offset calculation method for stitching.")
 
             gr.Markdown("### Project and Output Settings")
             with gr.Row():
@@ -127,7 +141,7 @@ with gr.Blocks() as iface:
             stitchWithFeature,
             inputs=[
                 featureMethod, isColorMode, windowing, isGPUAvailable, isEnhance, isClahe, searchRatio,
-                offsetCalculate, offsetEvaluate, roiRatio, fuseMethod, direction, directIncre, enableIncremental,
+                offsetCalculate, offsetEvaluate, roiRatio, fuseMethod, direction, directIncre, enableIncremental, offsetCalculationMethod,
                 projectAddress, outputFolder, fileNum, startNum, inputFileExtension, outputfileExtension
             ],
             outputs=[
